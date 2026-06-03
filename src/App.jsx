@@ -1,10 +1,9 @@
-
 import './App.css'
 import { useState, useCallback, useEffect, useRef } from "react";
 
 export default function App() {
   const [pos, setPos] = useState({ x: -999, y: -999 });
-  const size = 320; // torch diameter
+  const size = 320;
   const [channel, setChannel] = useState('');
   const [inputVal, setInputVal] = useState('');
   const [connected, setConnected] = useState(false);
@@ -41,16 +40,14 @@ export default function App() {
     };
 
     return () => ws.close();
-  }, [channel]); // re-runs whenever channel changes
+  }, [channel]);
 
   const connect = () => {
     const val = inputVal.trim().toUpperCase();
     if (val.length < 4) return;
-    calibRef.current = null; // reset calibration for new connection
+    calibRef.current = null;
     setChannel(val);
   };
-
-  // ... your existing onMouseMove and onTouchMove unchanged
 
   const onMouseMove = useCallback((e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -64,10 +61,6 @@ export default function App() {
     e.preventDefault();
   }, []);
 
-  // The mask gradient mirrors the torch gradient exactly,
-  // but capped at 1.0 (x*2 effect handled by using a steeper gradient).
-  // Geometric decay: 1, 0.75, 0.56, 0.42, 0.32, 0.24, 0.18, 0.13, 0.10, 0.07, 0 
-  // Doubled & clamped: 1, 1, 1, 0.84, 0.64, 0.48, 0.36, 0.26, 0.20, 0.14, 0
   const maskGradient = `radial-gradient(circle ${size / 2}px at ${pos.x}px ${pos.y}px,
     rgba(0,0,0,1)    0%,
     rgba(0,0,0,1)    10%,
@@ -82,7 +75,6 @@ export default function App() {
     rgba(0,0,0,0)    100%
   )`;
 
-  // Torch glow layer gradient (yellow light)
   const torchGradient = `radial-gradient(circle,
     rgba(255,220,50,1)    0%,
     rgba(255,220,50,0.75) 10%,
@@ -111,6 +103,41 @@ export default function App() {
         background: "#0d0d0d",
       }}
     >
+      {/* ── Channel connect overlay ── */}
+      {!connected && (
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 99,
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center",
+          background: "#0d0d0dcc", backdropFilter: "blur(6px)",
+          gap: 12, fontFamily: "monospace",
+        }}>
+          <p style={{ color: "#aaa", letterSpacing: "0.2em", fontSize: 12 }}>
+            ENTER CHANNEL ID FROM PHONE
+          </p>
+          <input
+            value={inputVal}
+            onChange={e => setInputVal(e.target.value.toUpperCase())}
+            onKeyDown={e => e.key === 'Enter' && connect()}
+            maxLength={6}
+            placeholder="ABC123"
+            style={{
+              background: "#111", color: "#fff", border: "1px solid #333",
+              borderRadius: 8, padding: "10px 20px", fontSize: 20,
+              letterSpacing: "0.3em", textAlign: "center",
+              fontFamily: "monospace", outline: "none", width: 180,
+            }}
+          />
+          <button onClick={connect} style={{
+            background: "#222", color: "#fff", border: "1px solid #444",
+            borderRadius: 8, padding: "8px 24px", cursor: "pointer",
+            fontFamily: "monospace", letterSpacing: "0.15em",
+          }}>
+            Connect
+          </button>
+        </div>
+      )}
+
       {/* ── Layer 1: dark background ── */}
       <div style={{
         position: "absolute", inset: 0,
@@ -125,36 +152,17 @@ export default function App() {
           zIndex: 1,
           WebkitMaskImage: maskGradient,
           maskImage: maskGradient,
-          // The "picture": a colourful SVG scene
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        {/*
-          ── SWAP YOUR OWN IMAGE HERE ──────────────────────────────────────
-          Replace everything from <svg ...> to </svg> below with any content
-          you want revealed by the torch. For example, an image file:
-
-            <img
-              src="/your-image.jpg"
-              alt=""
-              style={{ width: "100%", height: "100%", objectFit: "cover",
-                       position: "absolute", inset: 0 }}
-            />
-
-          Or a regular <div> with text, a photo, a CSS background, etc.
-          The mask will automatically cut out the torch shape from whatever
-          is placed here — no other changes needed.
-          ─────────────────────────────────────────────────────────────────
-        */}
-        {/* Inline SVG graphic that gets revealed */}
         <img
-              src="/background.jpg"
-              alt=""
-              style={{ width: "100%", height: "100%", objectFit: "cover",
-                       position: "absolute", inset: 0 }}
-            />
+          src="/background.jpg"
+          alt=""
+          style={{ width: "100%", height: "100%", objectFit: "cover",
+                   position: "absolute", inset: 0 }}
+        />
       </div>
 
       {/* ── Layer 3: torch glow overlay ── */}
@@ -172,6 +180,22 @@ export default function App() {
           pointerEvents: "none",
         }}
       />
+
+      {/* ── Recalibrate button — only shown when connected ── */}
+      {connected && (
+        <button
+          onClick={() => { calibRef.current = null; }}
+          style={{
+            position: "absolute", bottom: 20, right: 20, zIndex: 10,
+            padding: "8px 16px", background: "#222", color: "#fff",
+            border: "1px solid #444", borderRadius: 8,
+            cursor: "pointer", fontFamily: "monospace",
+          }}
+        >
+          Recalibrate
+        </button>
+      )}
+
     </div>
   );
 }
