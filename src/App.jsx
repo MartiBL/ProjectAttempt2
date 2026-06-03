@@ -1,11 +1,56 @@
 
 import './App.css'
-
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 
 export default function App() {
   const [pos, setPos] = useState({ x: -999, y: -999 });
   const size = 320; // torch diameter
+  const [channel, setChannel] = useState('');
+  const [inputVal, setInputVal] = useState('');
+  const [connected, setConnected] = useState(false);
+  const calibRef = useRef(null);
+  const wsRef = useRef(null);
+  const SENSITIVITY = 6;
+
+  useEffect(() => {
+    if (!channel) return;
+
+    const ws = new WebSocket(`wss://socketsbay.com/wss/v2/1/${channel}/`);
+    wsRef.current = ws;
+    
+    ws.onopen  = () => setConnected(true);
+    ws.onclose = () => setConnected(false);
+
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type !== 'gyro') return;
+
+        if (!calibRef.current) {
+          calibRef.current = { beta: msg.beta, gamma: msg.gamma };
+        }
+
+        const dBeta  = msg.beta  - calibRef.current.beta;
+        const dGamma = msg.gamma - calibRef.current.gamma;
+
+        setPos({
+          x: Math.max(0, Math.min(window.innerWidth,  window.innerWidth  / 2 + dGamma * SENSITIVITY)),
+          y: Math.max(0, Math.min(window.innerHeight, window.innerHeight / 2 + dBeta  * SENSITIVITY)),
+        });
+      } catch (e) {}
+    };
+
+    return () => ws.close();
+  }, [channel]); // re-runs whenever channel changes
+
+  const connect = () => {
+    const val = inputVal.trim().toUpperCase();
+    if (val.length < 4) return;
+    calibRef.current = null; // reset calibration for new connection
+    setChannel(val);
+  };
+
+  // ... your existing onMouseMove and onTouchMove unchanged
 
   const onMouseMove = useCallback((e) => {
     const rect = e.currentTarget.getBoundingClientRect();
