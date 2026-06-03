@@ -185,10 +185,10 @@
       channelId = Math.random().toString(36).slice(2, 8).toUpperCase();
       sessionStorage.setItem(CHANNEL_KEY, channelId);
     }
-
+    
     document.getElementById('channelDisplay').textContent = channelId;
 
-    const WS_URL = `wss://socketsbay.com/wss/v2/1/${channelId}/`;
+    const WS_URL = `wss://echo.websocket.org/.ws?channel=${channelId}`;
     let ws = null;
     let active = false;
 
