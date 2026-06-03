@@ -7,4 +7,5 @@ export default defineConfig({
   server: {
     allowedHosts: ["all"],
   },
+  base: "/ProjectAttempt2/",
 });
