@@ -185,10 +185,10 @@
       channelId = Math.random().toString(36).slice(2, 8).toUpperCase();
       sessionStorage.setItem(CHANNEL_KEY, channelId);
     }
-    
+
     document.getElementById('channelDisplay').textContent = channelId;
 
-    const WS_URL = `wss://echo.websocket.org/.ws?channel=${channelId}`;
+    const WS_URL = `wss://s14322.nyc1.piesocket.com/v3/${channelId}?api_key=e79c8207e6c1f4bc6062221d6047ec3c147581c7&notify_self=0`;
     let ws = null;
     let active = false;
 
