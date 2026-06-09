@@ -14,7 +14,7 @@ export default function App() {
   useEffect(() => {
     if (!channel) return;
 
-    const ws = new WebSocket(`wss://socketsbay.com/wss/v2/1/${channel}/`);
+   const ws = new WebSocket(`wss://gyro-cursor.martibl.partykit.dev/party/${channel}`);
     wsRef.current = ws;
     
     ws.onopen  = () => setConnected(true);
@@ -158,7 +158,7 @@ export default function App() {
         }}
       >
         <img
-          src="/background.jpg"
+          src="/ProjectAttempt2/background.jpg"
           alt=""
           style={{ width: "100%", height: "100%", objectFit: "cover",
                    position: "absolute", inset: 0 }}
