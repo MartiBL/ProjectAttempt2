@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Gyro Controller</title>
+  <title>Torch Controller</title>
   <style>
     * {
       margin: 0;
@@ -14,120 +14,251 @@
 
     body {
       min-height: 100dvh;
-      background: #0a0a0f;
+      background: #0a0700;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-family: 'Courier New', monospace;
-      color: #e0e0e0;
+      font-family: 'Georgia', serif;
+      color: #c8a96e;
       overflow: hidden;
       user-select: none;
     }
 
-    .orb {
-      width: 140px;
-      height: 140px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 35% 35%, #a78bfa, #6d28d9 60%, #2e1065);
-      box-shadow: 0 0 60px #7c3aed88, 0 0 120px #4c1d9544;
-      transition: transform 0.08s ease-out, box-shadow 0.08s ease-out;
-      margin-bottom: 40px;
-      position: relative;
-    }
-
-    .orb::after {
+    /* ── Papyrus texture overlay ── */
+    body::before {
       content: '';
-      position: absolute;
-      top: 18%;
-      left: 22%;
-      width: 30%;
-      height: 20%;
-      background: rgba(255, 255, 255, 0.25);
-      border-radius: 50%;
-      filter: blur(4px);
+      position: fixed;
+      inset: 0;
+      background-image: repeating-linear-gradient(0deg, transparent, transparent 3px,
+          rgba(180, 140, 60, 0.03) 3px, rgba(180, 140, 60, 0.03) 4px);
+      pointer-events: none;
+      z-index: 0;
     }
 
-    .orb.active {
-      box-shadow: 0 0 80px #7c3aedcc, 0 0 160px #6d28d988;
+    /* ── Vignette ── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 40%, #0a0700cc 100%);
+      pointer-events: none;
+      z-index: 0;
     }
 
     h1 {
-      font-size: 1.1rem;
-      letter-spacing: 0.25em;
+      font-size: 1rem;
+      letter-spacing: 0.45em;
       text-transform: uppercase;
-      color: #a78bfa;
-      margin-bottom: 8px;
+      color: #d4a843;
+      margin-bottom: 4px;
+      position: relative;
+      z-index: 1;
     }
 
     .subtitle {
-      font-size: 0.75rem;
-      color: #555;
-      letter-spacing: 0.15em;
-      margin-bottom: 48px;
+      font-size: 0.7rem;
+      color: #6b5230;
+      letter-spacing: 0.2em;
+      margin-bottom: 40px;
+      position: relative;
+      z-index: 1;
     }
 
+    /* ── Torch flame ── */
+    .torch-wrap {
+      position: relative;
+      width: 80px;
+      height: 160px;
+      margin-bottom: 40px;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Flame layers */
+    .flame {
+      position: absolute;
+      bottom: 48px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 48px;
+      height: 72px;
+      border-radius: 50% 50% 30% 30% / 60% 60% 40% 40%;
+      background: radial-gradient(ellipse at 50% 80%,
+          #fff5a0 0%,
+          #ffcc00 20%,
+          #ff8800 50%,
+          #ff3300 75%,
+          transparent 100%);
+      filter: blur(1px);
+      animation: flicker 1.4s ease-in-out infinite alternate;
+      transform-origin: bottom center;
+    }
+
+    .flame.inner {
+      width: 24px;
+      height: 48px;
+      bottom: 48px;
+      background: radial-gradient(ellipse at 50% 90%,
+          #ffffff 0%,
+          #fff5a0 30%,
+          #ffcc00 70%,
+          transparent 100%);
+      filter: blur(0.5px);
+      animation: flicker 0.9s ease-in-out infinite alternate-reverse;
+      z-index: 2;
+    }
+
+    .flame.glow {
+      width: 70px;
+      height: 80px;
+      bottom: 40px;
+      background: radial-gradient(ellipse at 50% 70%,
+          rgba(255, 180, 0, 0.35) 0%,
+          rgba(255, 100, 0, 0.15) 50%,
+          transparent 100%);
+      filter: blur(8px);
+      animation: flicker 2s ease-in-out infinite alternate;
+      z-index: 0;
+    }
+
+    @keyframes flicker {
+      0% {
+        transform: translateX(-50%) scaleX(1) scaleY(1) rotate(-1deg);
+      }
+
+      25% {
+        transform: translateX(-50%) scaleX(0.95) scaleY(1.04) rotate(1deg);
+      }
+
+      50% {
+        transform: translateX(-50%) scaleX(1.04) scaleY(0.97) rotate(-2deg);
+      }
+
+      75% {
+        transform: translateX(-50%) scaleX(0.97) scaleY(1.02) rotate(1.5deg);
+      }
+
+      100% {
+        transform: translateX(-50%) scaleX(1.02) scaleY(1.05) rotate(-1deg);
+      }
+    }
+
+    /* Torch handle */
+    .torch-handle {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 14px;
+      height: 60px;
+      background: linear-gradient(180deg, #5c3a1e 0%, #3b2410 50%, #2a1a0c 100%);
+      border-radius: 3px 3px 6px 6px;
+      box-shadow: inset -2px 0 4px rgba(0, 0, 0, 0.5), inset 2px 0 3px rgba(255, 180, 80, 0.1);
+    }
+
+    /* Torch bowl */
+    .torch-bowl {
+      position: absolute;
+      bottom: 44px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 36px;
+      height: 18px;
+      background: linear-gradient(180deg, #8b6914 0%, #5c4510 100%);
+      border-radius: 4px 4px 12px 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    }
+
+    /* ── Channel box ── */
     .channel-box {
-      background: #111118;
-      border: 1px solid #2a2a40;
-      border-radius: 12px;
-      padding: 16px 24px;
+      background: #0f0a04;
+      border: 1px solid #5c4010;
+      border-radius: 8px;
+      padding: 14px 24px;
       text-align: center;
       margin-bottom: 24px;
       width: 88%;
-      max-width: 320px;
+      max-width: 300px;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 0 20px #c8880022, inset 0 0 12px #00000088;
+    }
+
+    /* Decorative corner marks */
+    .channel-box::before,
+    .channel-box::after {
+      content: '𓂀';
+      position: absolute;
+      font-size: 14px;
+      color: #5c4010;
+      top: 6px;
+    }
+
+    .channel-box::before {
+      left: 10px;
+    }
+
+    .channel-box::after {
+      right: 10px;
     }
 
     .channel-label {
-      font-size: 0.65rem;
-      color: #444;
-      letter-spacing: 0.2em;
+      font-size: 0.6rem;
+      color: #5c4010;
+      letter-spacing: 0.25em;
       text-transform: uppercase;
       margin-bottom: 6px;
+      font-family: 'Courier New', monospace;
     }
 
     .channel-id {
-      font-size: 1.4rem;
-      letter-spacing: 0.3em;
-      color: #7c3aed;
+      font-size: 1.5rem;
+      letter-spacing: 0.35em;
+      color: #d4a843;
+      font-family: 'Courier New', monospace;
       font-weight: bold;
     }
 
     .status {
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       letter-spacing: 0.15em;
-      color: #555;
+      color: #4a3510;
       text-transform: uppercase;
       margin-top: 6px;
+      font-family: 'Courier New', monospace;
     }
 
     .status.live {
-      color: #4ade80;
+      color: #c8a030;
     }
 
     .status.error {
-      color: #f87171;
+      color: #8b2000;
     }
 
+    /* ── Button ── */
     button#startBtn {
-      background: linear-gradient(135deg, #7c3aed, #4c1d95);
-      color: white;
-      border: none;
-      border-radius: 10px;
-      padding: 14px 36px;
-      font-family: inherit;
+      background: linear-gradient(135deg, #8b6200, #5c3d00);
+      color: #f5d87a;
+      border: 1px solid #c8880055;
+      border-radius: 6px;
+      padding: 13px 36px;
+      font-family: 'Georgia', serif;
       font-size: 0.85rem;
-      letter-spacing: 0.2em;
+      letter-spacing: 0.25em;
       text-transform: uppercase;
       cursor: pointer;
-      box-shadow: 0 4px 24px #7c3aed44;
+      box-shadow: 0 0 20px #c8880033, inset 0 1px 0 rgba(255, 220, 100, 0.2);
       transition: all 0.2s;
-      margin-top: 8px;
+      position: relative;
+      z-index: 1;
     }
 
     button#startBtn:active {
-      transform: scale(0.96);
-      box-shadow: 0 2px 12px #7c3aed44;
+      transform: scale(0.97);
     }
 
     button#startBtn:disabled {
@@ -135,29 +266,50 @@
       cursor: default;
     }
 
+    /* ── Data row ── */
     .data-row {
       display: flex;
       gap: 20px;
       margin-top: 20px;
-      font-size: 0.7rem;
-      color: #444;
+      font-size: 0.65rem;
+      color: #3a2808;
       letter-spacing: 0.1em;
+      font-family: 'Courier New', monospace;
+      position: relative;
+      z-index: 1;
     }
 
     .data-val {
-      color: #7c3aed;
+      color: #8b6200;
       min-width: 48px;
       text-align: right;
+    }
+
+    /* Decorative hieroglyph strip */
+    .hiero {
+      position: relative;
+      z-index: 1;
+      font-size: 1.1rem;
+      color: #3a2808;
+      letter-spacing: 0.3em;
+      margin-top: 24px;
     }
   </style>
 </head>
 
 <body>
 
-  <h1>Gyro Remote</h1>
-  <p class="subtitle">Motion cursor controller</p>
+  <h1>𓆣 Torch Remote 𓆣</h1>
+  <p class="subtitle">illuminate the ancient world</p>
 
-  <div class="orb" id="orb"></div>
+  <!-- Torch flame centerpiece -->
+  <div class="torch-wrap" id="torchWrap">
+    <div class="flame glow"></div>
+    <div class="flame"></div>
+    <div class="flame inner"></div>
+    <div class="torch-bowl"></div>
+    <div class="torch-handle"></div>
+  </div>
 
   <div class="channel-box">
     <div class="channel-label">Channel ID</div>
@@ -165,20 +317,16 @@
     <div class="status" id="statusText">generating channel...</div>
   </div>
 
-  <button id="startBtn">Enable Gyro</button>
+  <button id="startBtn">Light the Torch</button>
 
   <div class="data-row">
-    <span>α <span class="data-val" id="dA">0°</span></span>
     <span>β <span class="data-val" id="dB">0°</span></span>
     <span>γ <span class="data-val" id="dG">0°</span></span>
   </div>
 
-  <script>
-    // We use a free public WebSocket echo/relay via piesocket or a BroadcastChannel polyfill
-    // For local-network / same-browser use: BroadcastChannel (same origin)
-    // For cross-device: use a tiny relay. We'll use wss://socketsbay.com/wss/v2/1/{channel}/
-    // which is a free public WebSocket channel (no backend needed).
+  <div class="hiero">𓂀 𓃭 𓆑 𓇯 𓈖</div>
 
+  <script>
     const CHANNEL_KEY = 'gyroChannel';
     let channelId = sessionStorage.getItem(CHANNEL_KEY);
     if (!channelId) {
@@ -191,25 +339,14 @@
     const WS_URL = `wss://gyro-cursor.martibl.partykit.dev/party/${channelId}`;
     let ws = null;
     let active = false;
-
-    const orb = document.getElementById('orb');
+    const torchWrap = document.getElementById('torchWrap');
     const statusEl = document.getElementById('statusText');
 
     function connect() {
       ws = new WebSocket(WS_URL);
-      ws.onopen = () => {
-        statusEl.textContent = 'connected — share this ID with desktop';
-        statusEl.className = 'status live';
-      };
-      ws.onclose = () => {
-        statusEl.textContent = 'disconnected';
-        statusEl.className = 'status error';
-        setTimeout(connect, 2000);
-      };
-      ws.onerror = () => {
-        statusEl.textContent = 'connection error';
-        statusEl.className = 'status error';
-      };
+      ws.onopen = () => { statusEl.textContent = 'connected — share ID with desktop'; statusEl.className = 'status live'; };
+      ws.onclose = () => { statusEl.textContent = 'disconnected'; statusEl.className = 'status error'; setTimeout(connect, 2000); };
+      ws.onerror = () => { statusEl.textContent = 'connection error'; statusEl.className = 'status error'; };
     }
 
     connect();
@@ -218,30 +355,26 @@
     function onOrientation(e) {
       if (!active) return;
       const now = Date.now();
-      if (now - lastSend < 30) return; // ~33fps throttle
+      if (now - lastSend < 30) return;
       lastSend = now;
 
-      const alpha = e.alpha ?? 0;
       const beta = e.beta ?? 0;
       const gamma = e.gamma ?? 0;
 
-      // Update debug display
-      document.getElementById('dA').textContent = alpha.toFixed(1) + '°';
       document.getElementById('dB').textContent = beta.toFixed(1) + '°';
       document.getElementById('dG').textContent = gamma.toFixed(1) + '°';
 
-      // Tilt the orb visually
-      const tX = Math.max(-25, Math.min(25, gamma));
-      const tY = Math.max(-25, Math.min(25, beta - 45));
-      orb.style.transform = `rotateX(${-tY}deg) rotateY(${tX}deg)`;
+      // Tilt torch visually
+      const tX = Math.max(-20, Math.min(20, gamma));
+      const tY = Math.max(-20, Math.min(20, beta - 45));
+      torchWrap.style.transform = `rotateX(${-tY * 0.5}deg) rotateY(${tX * 0.5}deg)`;
 
       if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: 'gyro', alpha, beta, gamma }));
+        ws.send(JSON.stringify({ type: 'gyro', beta, gamma }));
       }
     }
 
     document.getElementById('startBtn').addEventListener('click', async () => {
-      // iOS 13+ requires explicit permission
       if (typeof DeviceOrientationEvent !== 'undefined' &&
         typeof DeviceOrientationEvent.requestPermission === 'function') {
         try {
@@ -259,9 +392,8 @@
       }
 
       active = true;
-      orb.classList.add('active');
       document.getElementById('startBtn').disabled = true;
-      document.getElementById('startBtn').textContent = 'Transmitting...';
+      document.getElementById('startBtn').textContent = 'Torch Lit ✦';
       window.addEventListener('deviceorientation', onOrientation, true);
     });
   </script>
