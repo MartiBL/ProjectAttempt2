@@ -1,5 +1,6 @@
 import './App.css'
 import { useState, useCallback, useEffect, useRef } from "react";
+import Hotspot from "./components/Hotspot";
 
 export default function App() {
   const [pos, setPos] = useState({ x: -999, y: -999 });
@@ -13,32 +14,25 @@ export default function App() {
 
   useEffect(() => {
     if (!channel) return;
-
-   const ws = new WebSocket(`wss://gyro-cursor.martibl.partykit.dev/party/${channel}`);
+    const ws = new WebSocket(`wss://gyro-cursor.martibl.partykit.dev/party/${channel}`);
     wsRef.current = ws;
-    
     ws.onopen  = () => setConnected(true);
     ws.onclose = () => setConnected(false);
-
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
         if (msg.type !== 'gyro') return;
-
         if (!calibRef.current) {
           calibRef.current = { beta: msg.beta, gamma: msg.gamma };
         }
-
         const dBeta  = msg.beta  - calibRef.current.beta;
         const dGamma = msg.gamma - calibRef.current.gamma;
-
         setPos({
           x: Math.max(0, Math.min(window.innerWidth,  window.innerWidth  / 2 + dGamma * SENSITIVITY)),
           y: Math.max(0, Math.min(window.innerHeight, window.innerHeight / 2 + dBeta  * SENSITIVITY)),
         });
       } catch (e) {}
     };
-
     return () => ws.close();
   }, [channel]);
 
@@ -89,17 +83,30 @@ export default function App() {
     rgba(255,220,50,0)    100%
   )`;
 
+  // ── ADD YOUR ARTIFACTS HERE ──────────────────────────────
+  const hotspots = [
+    {
+      src: "/ProjectAttempt2/artifact1.jpg",
+      x: 200, y: 150, width: 120, height: 120,
+      card: {
+        name: "They eye of Horus",
+        location: "Cairo",
+        date: "456 BC",
+        description: "The green-blue glaze and stylized eye shape in your image are very characteristic of Egyptian faience amulets dating anywhere from the Late Period through the Ptolemaic era, though precise dating would require archaeological context or expert examination. One interesting detail is the small projection at the top and bottom, which may indicate that this piece was designed to be attached to another object or strung as a pendant, rather than simply being a decorative plaque.",
+      }
+    },
+    // copy the block above and paste it here for each new artifact
+  ];
+  // ────────────────────────────────────────────────────────
+
   return (
     <div
       onMouseMove={onMouseMove}
       onTouchMove={onTouchMove}
       style={{
-        width: "100vw",
-        height: "100vh",
-        position: "relative",
-        overflow: "hidden",
-        cursor: "none",
-        userSelect: "none",
+        width: "100vw", height: "100vh",
+        position: "relative", overflow: "hidden",
+        cursor: "none", userSelect: "none",
         background: "#0d0d0d",
       }}
     >
@@ -119,8 +126,7 @@ export default function App() {
             value={inputVal}
             onChange={e => setInputVal(e.target.value.toUpperCase())}
             onKeyDown={e => e.key === 'Enter' && connect()}
-            maxLength={6}
-            placeholder="ABC123"
+            maxLength={6} placeholder="ABC123"
             style={{
               background: "#111", color: "#fff", border: "1px solid #333",
               borderRadius: 8, padding: "10px 20px", fontSize: 20,
@@ -139,49 +145,47 @@ export default function App() {
       )}
 
       {/* ── Layer 1: dark background ── */}
-      <div style={{
-        position: "absolute", inset: 0,
-        background: "#0d0d0d",
-        zIndex: 0,
-      }} />
+      <div style={{ position: "absolute", inset: 0, background: "#0d0d0d", zIndex: 0 }} />
 
-      {/* ── Layer 2: picture / graphic — revealed by mask ── */}
-      <div
-        style={{
-          position: "absolute", inset: 0,
-          zIndex: 1,
-          WebkitMaskImage: maskGradient,
-          maskImage: maskGradient,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
+      {/* ── Layer 2: background image revealed by mask ── */}
+      <div style={{
+        position: "absolute", inset: 0, zIndex: 1,
+        WebkitMaskImage: maskGradient,
+        maskImage: maskGradient,
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
         <img
           src="/ProjectAttempt2/background.jpg"
           alt=""
-          style={{ width: "100%", height: "100%", objectFit: "cover",
-                   position: "absolute", inset: 0 }}
+          style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }}
         />
       </div>
 
       {/* ── Layer 3: torch glow overlay ── */}
-      <div
-        style={{
-          position: "absolute",
-          left: pos.x - size / 2,
-          top: pos.y - size / 2,
-          width: size,
-          height: size,
-          borderRadius: "50%",
-          background: torchGradient,
-          mixBlendMode: "screen",
-          zIndex: 2,
-          pointerEvents: "none",
-        }}
-      />
+      <div style={{
+        position: "absolute",
+        left: pos.x - size / 2,
+        top: pos.y - size / 2,
+        width: size, height: size,
+        borderRadius: "50%",
+        background: torchGradient,
+        mixBlendMode: "screen",
+        zIndex: 2,
+        pointerEvents: "none",
+      }} />
 
-      {/* ── Recalibrate button — only shown when connected ── */}
+      {/* ── Layer 4: hotspots ── */}
+      {hotspots.map((h, i) => (
+        <Hotspot
+          key={i}
+          {...h}
+          torchX={pos.x}
+          torchY={pos.y}
+          torchRadius={size / 2}
+        />
+      ))}
+
+      {/* ── Recalibrate button ── */}
       {connected && (
         <button
           onClick={() => { calibRef.current = null; }}
