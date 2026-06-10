@@ -31,7 +31,7 @@
       border-radius: 50%;
       background: radial-gradient(circle at 35% 35%, #a78bfa, #6d28d9 60%, #2e1065);
       box-shadow: 0 0 60px #7c3aed88, 0 0 120px #4c1d9544;
-      transition: transform 0.08s ease-out, box-shadow 0.08s ease-out;
+      transition: transform 0.08s ease-out;
       margin-bottom: 40px;
       position: relative;
     }
@@ -127,7 +127,6 @@
 
     button#startBtn:active {
       transform: scale(0.96);
-      box-shadow: 0 2px 12px #7c3aed44;
     }
 
     button#startBtn:disabled {
@@ -154,8 +153,8 @@
 
 <body>
 
-  <h1>Gyro Remote</h1>
-  <p class="subtitle">Motion cursor controller</p>
+  <h1>Motion Remote</h1>
+  <p class="subtitle">Move cursor by moving phone</p>
 
   <div class="orb" id="orb"></div>
 
@@ -165,20 +164,14 @@
     <div class="status" id="statusText">generating channel...</div>
   </div>
 
-  <button id="startBtn">Enable Gyro</button>
+  <button id="startBtn">Enable Motion</button>
 
   <div class="data-row">
-    <span>α <span class="data-val" id="dA">0°</span></span>
-    <span>β <span class="data-val" id="dB">0°</span></span>
-    <span>γ <span class="data-val" id="dG">0°</span></span>
+    <span>X <span class="data-val" id="dA">0</span></span>
+    <span>Y <span class="data-val" id="dB">0</span></span>
   </div>
 
   <script>
-    // We use a free public WebSocket echo/relay via piesocket or a BroadcastChannel polyfill
-    // For local-network / same-browser use: BroadcastChannel (same origin)
-    // For cross-device: use a tiny relay. We'll use wss://socketsbay.com/wss/v2/1/{channel}/
-    // which is a free public WebSocket channel (no backend needed).
-
     const CHANNEL_KEY = 'gyroChannel';
     let channelId = sessionStorage.getItem(CHANNEL_KEY);
     if (!channelId) {
@@ -188,7 +181,7 @@
 
     document.getElementById('channelDisplay').textContent = channelId;
 
-   const WS_URL = `wss://gyro-cursor.martibl.partykit.dev/party/${channelId}`;
+    const WS_URL = `wss://gyro-cursor.martibl.partykit.dev/party/${channelId}`;
     let ws = null;
     let active = false;
 
@@ -215,37 +208,34 @@
     connect();
 
     let lastSend = 0;
-    function onOrientation(e) {
+
+    function onMotion(e) {
       if (!active) return;
       const now = Date.now();
-      if (now - lastSend < 30) return; // ~33fps throttle
+      if (now - lastSend < 30) return;
       lastSend = now;
 
-      const alpha = e.alpha ?? 0;
-      const beta = e.beta ?? 0;
-      const gamma = e.gamma ?? 0;
+      const acc = e.accelerationIncludingGravity;
+      if (!acc) return;
 
-      // Update debug display
-      document.getElementById('dA').textContent = alpha.toFixed(1) + '°';
-      document.getElementById('dB').textContent = beta.toFixed(1) + '°';
-      document.getElementById('dG').textContent = gamma.toFixed(1) + '°';
+      const x = acc.x ?? 0;
+      const y = acc.y ?? 0;
 
-      // Tilt the orb visually
-      const tX = Math.max(-25, Math.min(25, gamma));
-      const tY = Math.max(-25, Math.min(25, beta - 45));
-      orb.style.transform = `rotateX(${-tY}deg) rotateY(${tX}deg)`;
+      document.getElementById('dA').textContent = x.toFixed(1);
+      document.getElementById('dB').textContent = y.toFixed(1);
+
+      orb.style.transform = `rotateX(${-y * 2}deg) rotateY(${x * 2}deg)`;
 
       if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: 'gyro', alpha, beta, gamma }));
+        ws.send(JSON.stringify({ type: 'motion', x, y }));
       }
     }
 
     document.getElementById('startBtn').addEventListener('click', async () => {
-      // iOS 13+ requires explicit permission
-      if (typeof DeviceOrientationEvent !== 'undefined' &&
-        typeof DeviceOrientationEvent.requestPermission === 'function') {
+      if (typeof DeviceMotionEvent !== 'undefined' &&
+        typeof DeviceMotionEvent.requestPermission === 'function') {
         try {
-          const permission = await DeviceOrientationEvent.requestPermission();
+          const permission = await DeviceMotionEvent.requestPermission();
           if (permission !== 'granted') {
             statusEl.textContent = 'permission denied';
             statusEl.className = 'status error';
@@ -262,7 +252,7 @@
       orb.classList.add('active');
       document.getElementById('startBtn').disabled = true;
       document.getElementById('startBtn').textContent = 'Transmitting...';
-      window.addEventListener('deviceorientation', onOrientation, true);
+      window.addEventListener('devicemotion', onMotion, true);
     });
   </script>
 </body>
